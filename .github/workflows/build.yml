@@ -21,26 +21,19 @@ jobs:
 
       - name: Build Android APK
         run: |
-          # 1. Initialize npm project
           npm init -y
-
-          # 2. Install Capacitor
           npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0
-
-          # 3. Create web asset folder and copy HTML
           mkdir -p www
           cp index.html www/index.html
 
-          # 4. Create explicit Capacitor configuration
           cat << 'EOF' > capacitor.config.json
           {
-            "appId": "com.albion.refiner",
-            "appName": "Albion Refiner",
+            "appId": "com.albion.calculator",
+            "appName": "Albion Calculator",
             "webDir": "www"
           }
           EOF
 
-          # 5. Add Android native platform and compile
           npx cap add android
           cd android
           chmod +x gradlew
@@ -49,5 +42,5 @@ jobs:
       - name: Upload Clean APK
         uses: actions/upload-artifact@v4
         with:
-          name: Albion-Refiner-Clean-APK
+          name: Albion-Calculator-Clean-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
