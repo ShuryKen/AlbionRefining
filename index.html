@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Albion Online Refining Calculator</title>
+<style>
+  :root {
+    --bg: #121417; --card: #1c2128; --card-border: #2d333b; --text: #e6edf3;
+    --text-muted: #8b949e; --accent: #238636; --accent-blue: #2f81f7;
+    --danger: #f85149; --input-bg: #0d1117; --input-border: #30363d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); padding-bottom: 60px; }
+  header { background: var(--card); border-bottom: 1px solid var(--card-border); padding: 16px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: center; align-items: center; }
+  h1 { font-size: 1.1rem; font-weight: 700; color: #58a6ff; white-space: nowrap; margin: 0; }
+  .save-btn { background: #238636; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
+  .save-btn:active { background: #2ea043; }
+  
+  .tabs-scroll { display: flex; overflow-x: auto; background: var(--input-bg); padding: 4px; border-radius: 8px; margin: 12px 14px 4px; gap: 4px; border: 1px solid var(--card-border); -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex: 0 0 auto; padding: 9px 12px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .tab-btn.active { background: var(--card-border); color: #fff; }
+  .tab-content { display: none; padding: 10px 14px; }
+  .tab-content.active { display: block; }
+  
+  .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .card-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select { width: 100%; padding: 10px 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text); font-size: 0.95rem; }
+  input[type="checkbox"] { width: auto; transform: scale(1.25); margin-right: 10px; accent-color: var(--accent-blue); }
+  input:focus, select:focus { outline: none; border-color: var(--accent-blue); }
+  .row { display: flex; gap: 8px; }
+  .row .form-group { flex: 1; }
+  
+  /* Checkbox styling with clean spacing */
+  .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 16px; }
+  .checkbox-row { display: flex; align-items: center; }
+  .checkbox-row label { font-size: 0.85rem; color: var(--text); margin-bottom: 0; text-transform: none; font-weight: 600; cursor: pointer; }
+  
+  .results { background: rgba(0,0,0,0.25); border-radius: 8px; padding: 12px; margin-top: 10px; border: 1px solid var(--card-border); }
+  .stat-line { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
+  .stat-line.total { border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 8px; font-weight: 700; font-size: 1rem; }
+  .stat-line.total-cost { border-top: 1px dashed var(--card-border); padding-top: 8px; margin-top: 8px; font-weight: 600; font-size: 0.9rem; color: #d2a8ff; }
+  .profit-pos { color: #3fb950 !important; }
+  .profit-neg { color: var(--danger) !important; }
+  .profit-neutral { color: var(--text-muted) !important; }
+  
+  .save-alert { display: none; background: #238636; color: white; padding: 10px; border-radius: 8px; margin: 10px 14px 0; font-size: 0.82rem; text-align: center; }
+  
+  /* Overview Table */
+  table.overview { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  table.overview th { text-align: left; padding: 8px; background: var(--card-border); color: #fff; position: sticky; top: 0; }
+  table.overview td { padding: 8px; border-bottom: 1px solid var(--card-border); }
+  .mat-section { background: var(--card-border); font-weight: 700; color: var(--text); }
+  
+  /* Compact Input Row */
+  .input-grid-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;}
+  .input-grid-row:last-child { border-bottom: none; }
+  .tier-label-box { flex: 0 0 45px; font-weight: bold; font-size: 0.85rem; color: var(--accent-blue); text-align: center; }
+  .price-inp { flex: 1; padding: 8px; font-size: 0.85rem; }
+  
+  /* Resource Selector */
+  .res-selector { display: flex; gap: 4px; background: var(--input-bg); border: 1px solid var(--card-border); padding: 4px; border-radius: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 16px; }
+  .res-btn { flex: 1 0 auto; padding: 8px 12px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+  .res-btn.active { background: var(--accent-blue); color: #fff; }
+
+  /* In-app Clean Tier Selector */
+  .custom-tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; max-height: 160px; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--input-border); padding: 8px; border-radius: 6px; margin-bottom: 12px; }
+  .tier-pill { background: var(--card); border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 4px; text-align: center; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.15s; }
+  .tier-pill.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); font-weight: 700; }
+  .tier-pill:hover { border-color: var(--accent-blue); }
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121417">
+<link rel="apple-touch-icon" href="icon.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</head>
+<body>
+
+<header>
+  <h1>Albion Online Refining Calculator</h1>
+</header>
+
+<div id="save-banner" class="save-alert">✓ Data baked into file! Saved to Downloads.</div>
+
+<div class="tabs-scroll">
+  <button class="tab-btn active" onclick="switchTab('settings')">Settings</button>
+  <button class="tab-btn" onclick="switchTab('prices')">Global Prices</button>
+  <button class="tab-btn" onclick="switchTab('overview')">Global Overview</button>
+  <button class="tab-btn" onclick="switchTab('individual')">Individual Overview</button>
+</div>
+
+<!-- 1. SETTINGS TAB -->
+<div id="tab-settings" class="tab-content active">
+  <div class="card">
+    <div class="card-title">Tax & Fee Configuration</div>
+    
+    <div class="form-group">
+      <label>Market Tax Status</label>
+      <select id="cfg-tax-status" onchange="updateConfig()">
+        <option value="none">Direct Trade (0% Tax)</option>
+        <option value="premium">Active Premium (4% Market Tax)</option>
+        <option value="nopremium" selected>No Premium (8% Market Tax)</option>
+      </select>
+    </div>
+    
+    <div class="checkbox-group">
+      <div class="checkbox-row">
+        <input type="checkbox" id="cfg-sell-order" checked onchange="updateConfig()">
+        <label for="cfg-sell-order">Sold via Sell Order (+2.5% fee)</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="cfg-buy-order" checked onchange="updateConfig()">
+        <label for="cfg-buy-order">Bought via Buy Order (+2.5% fee)</label>
+      </div>
+    </div>
+
+    <div style="border-bottom: 1px solid var(--card-border); margin: 12px 0;"></div>
+
+    <div class="form-group">
+      <label>Refining Resource Return Rate (RRR %)</label>
+      <input type="number" id="cfg-refine-rrr" step="0.1" value="36.7" oninput="updateConfig()">
+    </div>
+    <div class="form-group">
+      <label>Station Fee (Silver per 100 nutrition)</label>
+      <input type="number" id="cfg-station-fee" value="450" oninput="updateConfig()">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Data Management</div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div>
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text);">Export HTML Backup</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;"><b>(Not required)</b> The app auto-saves your prices locally. Use this only if you want to download a hardcoded copy.</div>
+      </div>
+      <button class="save-btn" onclick="downloadBakedFile()" style="flex-shrink: 0;">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. GLOBAL PRICES TAB -->
+<div id="tab-prices" class="tab-content">
+  <div class="card">
+    <div class="card-title">Global Price Entry</div>
+    
+    <label>Select Resource</label>
+    <div class="res-selector" id="price-mat-select">
+      <button class="res-btn active" onclick="setPriceMat('Leather')">Leather</button>
+      <button class="res-btn" onclick="setPriceMat('Cloth')">Cloth</button>
+      <button class="res-btn" onclick="setPriceMat('Metal')">Metal</button>
+      <button class="res-btn" onclick="setPriceMat('Planks')">Planks</button>
+      <button class="res-btn" onclick="setPriceMat('Stone')">Stone</button>
+    </div>
+    
+    <div style="display: flex; gap: 8px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+      <div style="flex: 0 0 45px; text-align:center;">Tier</div>
+      <div style="flex: 1;">Raw Material Price</div>
+      <div style="flex: 1;">Refined Material Price</div>
+    </div>
+    <div id="price-inputs-container">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- 3. GLOBAL OVERVIEW TAB -->
+<div id="tab-overview" class="tab-content">
+  <div class="card" style="padding:0; overflow-x:auto;">
+    <table class="overview" id="overview-table">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>Raw</th>
+          <th>Refined</th>
+          <th>Profit/Stack</th>
+          <th>Capital Req</th>
+          <th>ROI</th>
+        </tr>
+      </thead>
+      <tbody id="overview-body">
+        <!-- Rendered via JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 4. INDIVIDUAL OVERVIEW TAB -->
+<div id="tab-individual" class="tab-content">
+  <div class="card">
+    <div class="card-title">Single Tier Breakdown</div>
+    
+    <div class="form-group">
+      <label>Select Resource</label>
+      <div class="res-selector" id="ind-mat-select">
+        <button class="res-btn active" onclick="setIndMat('Leather')">Leather</button>
+        <button class="res-btn" onclick="setIndMat('Cloth')">Cloth</button>
+        <button class="res-btn" onclick="setIndMat('Metal')">Metal</button>
+        <button class="res-btn" onclick="setIndMat('Planks')">Planks</button>
+        <button class="res-btn" onclick="setIndMat('Stone')">Stone</button>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Select Tier</label>
+      <div class="custom-tier-grid" id="ind-tier-pills">
+        <!-- In-app Tier Pills rendered via JS -->
+      </div>
+    </div>
+
+    <div class="results" id="ind-results-container">
+      <div style="text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 16px;">
+        Tap a tier above to inspect its breakdown.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="embedded-data">
+window.SAVED_STORE = {
+  config: { taxStatus: "nopremium", sellOrder: true, buyOrder: true, refRrr: "36.7", fee: "450" },
+  Leather: {}, Cloth: {}, Metal: {}, Planks: {}, Stone: {}
+};
+</script>
+
+<script>
+const TIERS_ALL = [
+  { label: 'T2', tier: 2, enc: 0, rawQty: 1, prevQty: 0, iv: 4, prevLbl: '-' },
+  { label: 'T3', tier: 3, enc: 0, rawQty: 2, prevQty: 1, iv: 8, prevLbl: 'T2' },
+  { label: 'T4.0', tier: 4, enc: 0, rawQty: 2, prevQty: 1, iv: 16, prevLbl: 'T3' },
+  { label: 'T4.1', tier: 4, enc: 1, rawQty: 2, prevQty: 1, iv: 32, prevLbl: 'T3' },
+  { label: 'T4.2', tier: 4, enc: 2, rawQty: 2, prevQty: 1, iv: 64, prevLbl: 'T3' },
+  { label: 'T4.3', tier: 4, enc: 3, rawQty: 2, prevQty: 1, iv: 128, prevLbl: 'T3' },
+  { label: 'T4.4', tier: 4, enc: 4, rawQty: 2, prevQty: 1, iv: 256, prevLbl: 'T3' },
+  { label: 'T5.0', tier: 5, enc: 0, rawQty: 3, prevQty: 1, iv: 32, prevLbl: 'T4.0' },
+  { label: 'T5.1', tier: 5, enc: 1, rawQty: 3, prevQty: 1, iv: 64, prevLbl: 'T4.1' },
+  { label: 'T5.2', tier: 5, enc: 2, rawQty: 3, prevQty: 1, iv: 128, prevLbl: 'T4.2' },
+  { label: 'T5.3', tier: 5, enc: 3, rawQty: 3, prevQty: 1, iv: 256, prevLbl: 'T4.3' },
+  { label: 'T5.4', tier: 5, enc: 4, rawQty: 3, prevQty: 1, iv: 512, prevLbl: 'T4.4' },
+  { label: 'T6.0', tier: 6, enc: 0, rawQty: 4, prevQty: 1, iv: 64, prevLbl: 'T5.0' },
+  { label: 'T6.1', tier: 6, enc: 1, rawQty: 4, prevQty: 1, iv: 128, prevLbl: 'T5.1' },
+  { label: 'T6.2', tier: 6, enc: 2, rawQty: 4, prevQty: 1, iv: 256, prevLbl: 'T5.2' },
+  { label: 'T6.3', tier: 6, enc: 3, rawQty: 4, prevQty: 1, iv: 512, prevLbl: 'T5.3' },
+  { label: 'T6.4', tier: 6, enc: 4, rawQty: 4, prevQty: 1, iv: 1024, prevLbl: 'T5.4' },
+  { label: 'T7.0', tier: 7, enc: 0, rawQty: 5, prevQty: 1, iv: 128, prevLbl: 'T6.0' },
+  { label: 'T7.1', tier: 7, enc: 1, rawQty: 5, prevQty: 1, iv: 256, prevLbl: 'T6.1' },
+  { label: 'T7.2', tier: 7, enc: 2, rawQty: 5, prevQty: 1, iv: 512, prevLbl: 'T6.2' },
+  { label: 'T7.3', tier: 7, enc: 3, rawQty: 5, prevQty: 1, iv: 1024, prevLbl: 'T6.3' },
+  { label: 'T7.4', tier: 7, enc: 4, rawQty: 5, prevQty: 1, iv: 2048, prevLbl: 'T6.4' },
+  { label: 'T8.0', tier: 8, enc: 0, rawQty: 5, prevQty: 1, iv: 256, prevLbl: 'T7.0' },
+  { label: 'T8.1', tier: 8, enc: 1, rawQty: 5, prevQty: 1, iv: 512, prevLbl: 'T7.1' },
+  { label: 'T8.2', tier: 8, enc: 2, rawQty: 5, prevQty: 1, iv: 1024, prevLbl: 'T7.2' },
+  { label: 'T8.3', tier: 8, enc: 3, rawQty: 5, prevQty: 1, iv: 2048, prevLbl: 'T7.3' },
+  { label: 'T8.4', tier: 8, enc: 4, rawQty: 5, prevQty: 1, iv: 4096, prevLbl: 'T7.4' }
+];
+const TIERS_STONE = TIERS_ALL.filter(t => t.enc === 0);
+
+let currentPriceMat = 'Leather';
+let currentIndMat = 'Leather';
+let selectedIndTier = null; // Default to null (nothing selected until clicked)
+
+function formatSilver(val) {
+  return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  
+  const btns = document.querySelectorAll('.tab-btn');
+  document.getElementById(`tab-${tabId}`).classList.add('active');
+  
+  if (tabId === 'settings') btns[0].classList.add('active');
+  if (tabId === 'prices') { btns[1].classList.add('active'); renderPriceInputs(); }
+  if (tabId === 'overview') { btns[2].classList.add('active'); renderOverview(); }
+  if (tabId === 'individual') { btns[3].classList.add('active'); updateIndTiers(); }
+}
+
+function updateConfig() {
+  window.SAVED_STORE.config = {
+    taxStatus: document.getElementById('cfg-tax-status').value,
+    sellOrder: document.getElementById('cfg-sell-order').checked,
+    buyOrder: document.getElementById('cfg-buy-order').checked,
+    refRrr: document.getElementById('cfg-refine-rrr').value,
+    fee: document.getElementById('cfg-station-fee').value
+  };
+}
+
+function loadConfig() {
+  const cfg = window.SAVED_STORE.config;
+  if (cfg) {
+    document.getElementById('cfg-tax-status').value = cfg.taxStatus || 'nopremium';
+    document.getElementById('cfg-sell-order').checked = cfg.sellOrder !== false;
+    document.getElementById('cfg-buy-order').checked = cfg.buyOrder !== false;
+    document.getElementById('cfg-refine-rrr').value = cfg.refRrr || '36.7';
+    document.getElementById('cfg-station-fee').value = cfg.fee || '450';
+  }
+}
+
+// ---------------- GLOBAL PRICES PAGE ----------------
+function setPriceMat(mat) {
+  currentPriceMat = mat;
+  const container = document.getElementById('price-mat-select');
+  container.querySelectorAll('.res-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText === mat);
+  });
+  renderPriceInputs();
+}
+
+function renderPriceInputs() {
+  const container = document.getElementById('price-inputs-container');
+  container.innerHTML = '';
+  
+  const tArr = (currentPriceMat === 'Stone') ? TIERS_STONE : TIERS_ALL;
+  if (!window.SAVED_STORE[currentPriceMat]) window.SAVED_STORE[currentPriceMat] = {};
+  
+  tArr.forEach(t => {
+    const data = window.SAVED_STORE[currentPriceMat][t.label] || { raw: "0", sell: "0" };
+    
+    container.innerHTML += `
+      <div class="input-grid-row">
+        <div class="tier-label-box">${t.label}</div>
+        <input type="number" class="price-inp" id="inp-raw-${currentPriceMat}-${t.label}" value="${data.raw}" 
+               onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" 
+               oninput="savePrice('${currentPriceMat}', '${t.label}')">
+        <input type="number" class="price-inp" id="inp-sell-${currentPriceMat}-${t.label}" value="${data.sell}" 
+               onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" 
+               oninput="savePrice('${currentPriceMat}', '${t.label}')">
+      </div>
+    `;
+  });
+}
+
+function savePrice(mat, tLabel) {
+  const rawV = document.getElementById(`inp-raw-${mat}-${tLabel}`).value || "0";
+  const sellV = document.getElementById(`inp-sell-${mat}-${tLabel}`).value || "0";
+  window.SAVED_STORE[mat][tLabel] = { raw: rawV, sell: sellV };
+}
+
+// ---------------- CORE CALCULATION ENGINE ----------------
+function computeTierDetails(mat, tLabel) {
+  const tArr = (mat === 'Stone') ? TIERS_STONE : TIERS_ALL;
+  const t = tArr.find(x => x.label === tLabel);
+  if (!t) return null;
+
+  const data = window.SAVED_STORE[mat][tLabel] || {raw: "0", sell: "0"};
+  const rawPrice = parseFloat(data.raw) || 0;
+  const sellPrice = parseFloat(data.sell) || 0;
+  
+  let prevPrice = 0;
+  if (t.prevQty > 0 && t.prevLbl !== '-') {
+    const prevData = window.SAVED_STORE[mat][t.prevLbl];
+    if (prevData && prevData.sell) {
+      prevPrice = parseFloat(prevData.sell) || 0;
+    }
+    // For tiers that require a lower refined material (T3+), if the lower refined price is 0, the recipe is incomplete!
+    if (prevPrice <= 0) return null;
+  }
+
+  // Strict completion rule: user must have entered both raw buy and target sell price!
+  if (rawPrice <= 0 || sellPrice <= 0) return null;
+
+  const cfg = window.SAVED_STORE.config;
+  
+  let baseTax = 0.08;
+  if (cfg.taxStatus === 'premium') baseTax = 0.04;
+  if (cfg.taxStatus === 'none') baseTax = 0.00;
+  
+  const sellSetupFee = cfg.sellOrder ? 0.025 : 0;
+  const totalSellTax = baseTax + sellSetupFee;
+
+  const rrr = (parseFloat(cfg.refRrr) || 0) / 100;
+  const statFee = parseFloat(cfg.fee) || 0;
+  const buyMult = cfg.buyOrder ? 1.025 : 1;
+
+  const grossMatCost = ((t.rawQty * rawPrice) + (t.prevQty * prevPrice)) * buyMult;
+  const netMatCost = grossMatCost * (1 - rrr);
+  const stationFee = t.iv * 0.1125 * (statFee / 100);
+  const netRev = sellPrice * (1 - totalSellTax);
+  
+  const profit = netRev - netMatCost - stationFee;
+  const stackProfit = profit * 999;
+  const capitalSpent = (netMatCost + stationFee) * 999;
+  
+  const roi = (capitalSpent > 0) ? (profit * 999 / capitalSpent) * 100 : 0;
+
+  return {
+    ratio: `${t.rawQty} Raw + ${t.prevQty} Refined`,
+    raw: rawPrice,
+    prev: prevPrice,
+    sell: sellPrice,
+    grossMatCost, netMatCost, stationFee, netRev, profit, stackProfit, capitalSpent, roi
+  };
+}
+
+// ---------------- GLOBAL OVERVIEW TAB ----------------
+function renderOverview() {
+  const tbody = document.getElementById('overview-body');
+  tbody.innerHTML = '';
+  const mats = ['Leather', 'Cloth', 'Metal', 'Planks', 'Stone'];
+  let hasData = false;
+  
+  mats.forEach(mat => {
+    const tArr = (mat === 'Stone') ? TIERS_STONE : TIERS_ALL;
+    
+    let resultsList = [];
+    tArr.forEach(t => {
+      const res = computeTierDetails(mat, t.label);
+      if (res) {
+        res.tierLabel = t.label;
+        resultsList.push(res);
+      }
+    });
+    
+    if (resultsList.length > 0) {
+      hasData = true;
+      resultsList.sort((a, b) => b.roi - a.roi);
+      
+      tbody.innerHTML += `<tr><td colspan="6" class="mat-section">${mat}</td></tr>`;
+      
+      resultsList.forEach(res => {
+        const pClass = res.profit > 0 ? 'profit-pos' : (res.profit < 0 ? 'profit-neg' : 'profit-neutral');
+        const pSign = res.profit > 0 ? '+' : '';
+        const roiColor = res.roi > 0 ? '#a371f7' : '#8b949e';
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${res.tierLabel}</td>
+            <td>${res.raw}</td>
+            <td>${res.prev}</td>
+            <td class="${pClass}">${pSign}${formatSilver(res.stackProfit)}</td>
+            <td style="color:#8b949e;">${formatSilver(res.capitalSpent)}</td>
+            <td style="color:${roiColor}; font-weight:bold;">${res.roi.toFixed(2)}%</td>
+          </tr>
+        `;
+      });
+    }
+  });
+  
+  if (!hasData) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #8b949e;">No complete recipes found. Enter both Raw Buy & Refined Sell prices in "Global Prices" to calculate profits!</td></tr>`;
+  }
+}
+
+// ---------------- INDIVIDUAL OVERVIEW TAB ----------------
+function setIndMat(mat) {
+  currentIndMat = mat;
+  selectedIndTier = null; // Reset to nothing selected on resource switch
+  const container = document.getElementById('ind-mat-select');
+  container.querySelectorAll('.res-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText === mat);
+  });
+  updateIndTiers();
+}
+
+function updateIndTiers() {
+  const tArr = (currentIndMat === 'Stone') ? TIERS_STONE : TIERS_ALL;
+  const container = document.getElementById('ind-tier-pills');
+  container.innerHTML = '';
+  
+  tArr.forEach(t => {
+    const pill = document.createElement('div');
+    pill.className = 'tier-pill' + (selectedIndTier === t.label ? ' active' : '');
+    pill.innerText = t.label;
+    pill.onclick = function() {
+      selectIndTier(t.label);
+    };
+    container.appendChild(pill);
+  });
+  
+  renderIndividual();
+}
+
+function selectIndTier(tLabel) {
+  selectedIndTier = tLabel;
+  document.querySelectorAll('#ind-tier-pills .tier-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.innerText === tLabel);
+  });
+  renderIndividual();
+}
+
+function renderIndividual() {
+  const cont = document.getElementById('ind-results-container');
+  
+  if (!selectedIndTier) {
+    cont.innerHTML = `
+      <div style="text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 16px;">
+        Tap a tier above to inspect its breakdown.
+      </div>
+    `;
+    return;
+  }
+  
+  const res = computeTierDetails(currentIndMat, selectedIndTier);
+  
+  if (!res) {
+    cont.innerHTML = `
+      <div style="text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 16px;">
+        Incomplete recipe for <b>${selectedIndTier}</b>. Enter both Raw Buy & Refined Sell prices in Global Prices!
+      </div>
+    `;
+    return;
+  }
+  
+  const pClass = res.profit > 0 ? 'profit-pos' : (res.profit < 0 ? 'profit-neg' : 'profit-neutral');
+  const pSign = res.profit > 0 ? '+' : '';
+  const roiColor = res.roi > 0 ? '#a371f7' : '#8b949e';
+
+  cont.innerHTML = `
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Recipe Ratio:</span>
+      <span>${res.ratio}</span>
+    </div>
+    <div class="stat-line" style="margin-top:8px;">
+      <span style="color:var(--text-muted);">Loaded Raw Material Price:</span>
+      <span>${formatSilver(res.raw)} Silver</span>
+    </div>
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Loaded Lower Refined Price:</span>
+      <span>${formatSilver(res.prev)} Silver</span>
+    </div>
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Target Sell Price:</span>
+      <span>${formatSilver(res.sell)} Silver</span>
+    </div>
+    
+    <div style="border-bottom:1px solid var(--card-border); margin:10px 0;"></div>
+    
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Gross Material Cost:</span>
+      <span>${formatSilver(res.grossMatCost)} Silver</span>
+    </div>
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Net Cost (after RRR):</span>
+      <span>${formatSilver(res.netMatCost)} Silver</span>
+    </div>
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Station Usage Fee:</span>
+      <span>${formatSilver(res.stationFee)} Silver</span>
+    </div>
+    <div class="stat-line">
+      <span style="color:var(--text-muted);">Net Revenue (Post-Tax):</span>
+      <span>${formatSilver(res.netRev)} Silver</span>
+    </div>
+    <div class="stat-line total-cost">
+      <span>Capital Req per 999 Stack:</span>
+      <span>${formatSilver(res.capitalSpent)} Silver</span>
+    </div>
+    <div class="stat-line total">
+      <span>Return on Investment (ROI):</span>
+      <span style="color:${roiColor}">${res.roi.toFixed(2)}%</span>
+    </div>
+    <div class="stat-line total" style="margin-top: 2px;">
+      <span>Profit per Unit:</span>
+      <span class="${pClass}">${pSign}${formatSilver(res.profit)} Silver</span>
+    </div>
+    <div class="stat-line total" style="margin-top: 2px;">
+      <span>Profit per 999 Stack:</span>
+      <span class="${pClass}">${pSign}${formatSilver(res.stackProfit)} Silver</span>
+    </div>
+  `;
+}
+
+// ---------------- SYSTEM ----------------
+function downloadBakedFile() {
+  updateConfig();
+
+  const scriptTag = document.getElementById('embedded-data');
+  scriptTag.textContent = "\nwindow.SAVED_STORE = " + JSON.stringify(window.SAVED_STORE, null, 2) + ";\n";
+
+  const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([htmlContent], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Albion_Online_Refining_Calculator.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+
+  const banner = document.getElementById('save-banner');
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 4000);
+}
+
+window.onload = function() {
+  loadConfig();
+  switchTab('prices'); // Open to prices by default
+};
+</script>
+</body>
+</html>
