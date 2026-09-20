@@ -19,10 +19,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Build Android APK
         run: |
           npm init -y
-          npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0 @capacitor/assets@^3.0.0
+          npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0
           mkdir -p www
           cp index.html www/index.html
 
@@ -36,9 +39,20 @@ jobs:
 
           npx cap add android
 
-          # Generate app icons automatically from icon.png if present
+          # Automatically generate all Android icon sizes if icon.png exists
           if [ -f "icon.png" ]; then
-            npx @capacitor/assets generate --android --iconSource icon.png
+            RES_DIR="android/app/src/main/res"
+            convert icon.png -resize 48x48   $RES_DIR/mipmap-mdpi/ic_launcher.png
+            convert icon.png -resize 72x72   $RES_DIR/mipmap-hdpi/ic_launcher.png
+            convert icon.png -resize 96x96   $RES_DIR/mipmap-xhdpi/ic_launcher.png
+            convert icon.png -resize 144x144 $RES_DIR/mipmap-xxhdpi/ic_launcher.png
+            convert icon.png -resize 192x192 $RES_DIR/mipmap-xxxhdpi/ic_launcher.png
+
+            convert icon.png -resize 48x48   $RES_DIR/mipmap-mdpi/ic_launcher_round.png
+            convert icon.png -resize 72x72   $RES_DIR/mipmap-hdpi/ic_launcher_round.png
+            convert icon.png -resize 96x96   $RES_DIR/mipmap-xhdpi/ic_launcher_round.png
+            convert icon.png -resize 144x144 $RES_DIR/mipmap-xxhdpi/ic_launcher_round.png
+            convert icon.png -resize 192x192 $RES_DIR/mipmap-xxxhdpi/ic_launcher_round.png
           fi
 
           npx cap sync android
