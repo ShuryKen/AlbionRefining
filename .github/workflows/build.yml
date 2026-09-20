@@ -39,20 +39,30 @@ jobs:
 
           npx cap add android
 
-          # Automatically generate all Android icon sizes if icon.png exists
+          # Update both legacy mipmaps and modern Android adaptive icon foregrounds
           if [ -f "icon.png" ]; then
             RES_DIR="android/app/src/main/res"
+
+            # Legacy launcher icons
             convert icon.png -resize 48x48   $RES_DIR/mipmap-mdpi/ic_launcher.png
             convert icon.png -resize 72x72   $RES_DIR/mipmap-hdpi/ic_launcher.png
             convert icon.png -resize 96x96   $RES_DIR/mipmap-xhdpi/ic_launcher.png
             convert icon.png -resize 144x144 $RES_DIR/mipmap-xxhdpi/ic_launcher.png
             convert icon.png -resize 192x192 $RES_DIR/mipmap-xxxhdpi/ic_launcher.png
 
+            # Legacy round launcher icons
             convert icon.png -resize 48x48   $RES_DIR/mipmap-mdpi/ic_launcher_round.png
             convert icon.png -resize 72x72   $RES_DIR/mipmap-hdpi/ic_launcher_round.png
             convert icon.png -resize 96x96   $RES_DIR/mipmap-xhdpi/ic_launcher_round.png
             convert icon.png -resize 144x144 $RES_DIR/mipmap-xxhdpi/ic_launcher_round.png
             convert icon.png -resize 192x192 $RES_DIR/mipmap-xxxhdpi/ic_launcher_round.png
+
+            # Modern Adaptive Icon foregrounds (Android 8.0+)
+            convert icon.png -resize 108x108 $RES_DIR/mipmap-mdpi/ic_launcher_foreground.png
+            convert icon.png -resize 162x162 $RES_DIR/mipmap-hdpi/ic_launcher_foreground.png
+            convert icon.png -resize 216x216 $RES_DIR/mipmap-xhdpi/ic_launcher_foreground.png
+            convert icon.png -resize 324x324 $RES_DIR/mipmap-xxhdpi/ic_launcher_foreground.png
+            convert icon.png -resize 432x432 $RES_DIR/mipmap-xxxhdpi/ic_launcher_foreground.png
           fi
 
           npx cap sync android
