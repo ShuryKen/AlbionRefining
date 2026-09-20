@@ -22,7 +22,7 @@ jobs:
       - name: Build Android APK
         run: |
           npm init -y
-          npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0
+          npm install @capacitor/core@^6.0.0 @capacitor/cli@^6.0.0 @capacitor/android@^6.0.0 @capacitor/assets@^3.0.0
           mkdir -p www
           cp index.html www/index.html
 
@@ -35,6 +35,13 @@ jobs:
           EOF
 
           npx cap add android
+
+          # Generate app icons automatically from icon.png if present
+          if [ -f "icon.png" ]; then
+            npx @capacitor/assets generate --android --iconSource icon.png
+          fi
+
+          npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
