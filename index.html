@@ -11,8 +11,6 @@
     --danger: #f85149; --input-bg: #0d1117; --input-border: #30363d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  
-  /* App Polish: Prevent text highlighting, handle notches, disable zoom */
   body { 
     background: var(--bg); 
     color: var(--text); 
@@ -22,17 +20,18 @@
     user-select: none;
     overscroll-behavior-y: none;
   }
-  input { -webkit-user-select: auto; user-select: auto; } /* Keep inputs selectable */
-  
+  input { -webkit-user-select: auto; user-select: auto; }
   header { background: var(--card); border-bottom: 1px solid var(--card-border); padding: 16px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: center; align-items: center; }
   h1 { font-size: 1.1rem; font-weight: 700; color: #58a6ff; white-space: nowrap; margin: 0; }
   
+  .save-btn { background: #238636; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
+  .save-btn:active { background: #2ea043; }
   .reset-btn { background: #da3633; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
-  .reset-btn:active { background: #b62324; transform: scale(0.97); }
-  .action-alert { display: none; background: #238636; color: white; padding: 10px; border-radius: 8px; margin: 10px 14px 0; font-size: 0.82rem; text-align: center; }
+  .reset-btn:active { background: #b62324; }
+  .save-alert { display: none; background: #238636; color: white; padding: 10px; border-radius: 8px; margin: 10px 14px 0; font-size: 0.82rem; text-align: center; }
   
   .tabs-scroll { display: flex; overflow-x: auto; background: var(--input-bg); padding: 4px; border-radius: 8px; margin: 12px 14px 4px; gap: 4px; border: 1px solid var(--card-border); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .tabs-scroll::-webkit-scrollbar { display: none; } /* App Polish: Hide scrollbar */
+  .tabs-scroll::-webkit-scrollbar { display: none; }
   .tab-btn { flex: 0 0 auto; padding: 9px 12px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .tab-btn.active { background: var(--card-border); color: #fff; }
   .tab-content { display: none; padding: 10px 14px; }
@@ -79,7 +78,7 @@
   .custom-tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; max-height: 160px; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--input-border); padding: 8px; border-radius: 6px; margin-bottom: 12px; }
   .tier-pill { background: var(--card); border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 4px; text-align: center; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.15s; }
   .tier-pill.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); font-weight: 700; }
-  .tier-pill:active { transform: scale(0.95); }
+  .tier-pill:hover { border-color: var(--accent-blue); }
 </style>
 </head>
 <body>
@@ -88,7 +87,7 @@
   <h1>Albion Calculator</h1>
 </header>
 
-<div id="action-banner" class="action-alert">✓ Operation completed!</div>
+<div id="save-banner" class="save-alert">✓ Operation completed!</div>
 
 <div class="tabs-scroll">
   <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
@@ -137,10 +136,22 @@
       <label>Global Station Fee (Silver per 100 nutrition)</label>
       <input type="number" id="cfg-station-fee" value="450" oninput="updateConfig()">
     </div>
+    <div class="form-group" style="margin-top:16px;">
+      <label style="color:#ff7b72;">❤️ Faction Heart Price (Silver)</label>
+      <input type="number" id="cfg-heart-price" value="35000" oninput="updateConfig()">
+    </div>
   </div>
 
   <div class="card">
     <div class="card-title">Data Management</div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
+      <div>
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text);">Export HTML Backup</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;"><b>(Not required)</b></div>
+      </div>
+      <button class="save-btn" onclick="downloadBakedFile()" style="flex-shrink: 0;">💾 Save</button>
+    </div>
+    <div style="border-bottom: 1px solid var(--card-border); margin: 12px 0;"></div>
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
       <div>
         <div style="font-size: 0.85rem; font-weight: 600; color: var(--danger);">Reset All Prices & Quantities</div>
@@ -266,8 +277,18 @@
 </div>
 
 <script>
+const DEFAULT_CONFIG = { 
+  taxStatus: "nopremium", 
+  sellOrder: true, 
+  buyOrder: true, 
+  refRrr: "36.7", 
+  craftRrr: "24.8", 
+  fee: "450",
+  heartPrice: "35000"
+};
+
 window.SAVED_STORE = {
-  config: { taxStatus: "nopremium", sellOrder: true, buyOrder: true, refRrr: "36.7", craftRrr: "24.8", fee: "450" },
+  config: { ...DEFAULT_CONFIG },
   Leather: {}, Cloth: {}, Metal: {}, Planks: {}, Stone: {}, crafting: {}
 };
 
@@ -300,7 +321,6 @@ const TIERS_ALL = [
   { label: 'T8.3', tier: 8, enc: 3, rawQty: 5, prevQty: 1, iv: 2048, prevLbl: 'T7.3' },
   { label: 'T8.4', tier: 8, enc: 4, rawQty: 5, prevQty: 1, iv: 4096, prevLbl: 'T7.4' }
 ];
-const TIERS_STONE = TIERS_ALL.filter(t => t.enc === 0);
 
 let currentPriceMat = 'Leather';
 let currentIndMat = 'Leather';
@@ -337,7 +357,8 @@ function updateConfig() {
     buyOrder: document.getElementById('cfg-buy-order').checked,
     refRrr: document.getElementById('cfg-refine-rrr').value,
     craftRrr: document.getElementById('cfg-craft-rrr').value,
-    fee: document.getElementById('cfg-station-fee').value
+    fee: document.getElementById('cfg-station-fee').value,
+    heartPrice: document.getElementById('cfg-heart-price').value
   };
   persistData();
   calcCr();
@@ -346,15 +367,14 @@ function updateConfig() {
 }
 
 function loadConfig() {
-  const cfg = window.SAVED_STORE.config;
-  if (cfg) {
-    document.getElementById('cfg-tax-status').value = cfg.taxStatus || 'nopremium';
-    document.getElementById('cfg-sell-order').checked = cfg.sellOrder !== false;
-    document.getElementById('cfg-buy-order').checked = cfg.buyOrder !== false;
-    document.getElementById('cfg-refine-rrr').value = cfg.refRrr || '36.7';
-    document.getElementById('cfg-craft-rrr').value = cfg.craftRrr || '24.8';
-    document.getElementById('cfg-station-fee').value = cfg.fee || '450';
-  }
+  const cfg = window.SAVED_STORE.config || {};
+  document.getElementById('cfg-tax-status').value = cfg.taxStatus || 'nopremium';
+  document.getElementById('cfg-sell-order').checked = cfg.sellOrder !== undefined ? cfg.sellOrder : true;
+  document.getElementById('cfg-buy-order').checked = cfg.buyOrder !== undefined ? cfg.buyOrder : true;
+  document.getElementById('cfg-refine-rrr').value = cfg.refRrr || '36.7';
+  document.getElementById('cfg-craft-rrr').value = cfg.craftRrr || '24.8';
+  document.getElementById('cfg-station-fee').value = cfg.fee || '450';
+  document.getElementById('cfg-heart-price').value = cfg.heartPrice || '35000';
 }
 
 // ---------------- GLOBAL PRICES PAGE ----------------
@@ -371,21 +391,29 @@ function renderPriceInputs() {
   const container = document.getElementById('price-inputs-container');
   container.innerHTML = '';
   
-  const tArr = (currentPriceMat === 'Stone') ? TIERS_STONE : TIERS_ALL;
   if (!window.SAVED_STORE[currentPriceMat]) window.SAVED_STORE[currentPriceMat] = {};
   
-  tArr.forEach(t => {
+  TIERS_ALL.forEach(t => {
     const data = window.SAVED_STORE[currentPriceMat][t.label] || { raw: "0", sell: "0" };
+    const rawVal = (data.raw !== undefined && data.raw !== "") ? data.raw : "0";
+    let sellVal = (data.sell !== undefined && data.sell !== "") ? data.sell : "0";
     
+    let sellInputHTML = `<input type="number" class="price-inp" id="inp-sell-${currentPriceMat}-${t.label}" value="${sellVal}" 
+               onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" 
+               oninput="savePrice('${currentPriceMat}', '${t.label}')">`;
+               
+    if (currentPriceMat === 'Stone' && t.enc > 0) {
+        const flatTier = t.label.split('.')[0];
+        sellInputHTML = `<input type="text" class="price-inp" disabled style="background:var(--card); color:var(--text-muted); font-size: 0.75rem;" value="Yields ${flatTier}.0 Blocks">`;
+    }
+
     container.innerHTML += `
       <div class="input-grid-row">
         <div class="tier-label-box">${t.label}</div>
-        <input type="number" class="price-inp" id="inp-raw-${currentPriceMat}-${t.label}" value="${data.raw}" 
+        <input type="number" class="price-inp" id="inp-raw-${currentPriceMat}-${t.label}" value="${rawVal}" 
                onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" 
                oninput="savePrice('${currentPriceMat}', '${t.label}')">
-        <input type="number" class="price-inp" id="inp-sell-${currentPriceMat}-${t.label}" value="${data.sell}" 
-               onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" 
-               oninput="savePrice('${currentPriceMat}', '${t.label}')">
+        ${sellInputHTML}
       </div>
     `;
   });
@@ -393,24 +421,39 @@ function renderPriceInputs() {
 
 function savePrice(mat, tLabel) {
   const rawV = document.getElementById(`inp-raw-${mat}-${tLabel}`).value || "0";
-  const sellV = document.getElementById(`inp-sell-${mat}-${tLabel}`).value || "0";
+  let sellV = "0";
+  const sellEl = document.getElementById(`inp-sell-${mat}-${tLabel}`);
+  if (sellEl && !sellEl.disabled) sellV = sellEl.value || "0";
+  
   window.SAVED_STORE[mat][tLabel] = { raw: rawV, sell: sellV };
   persistData();
 }
 
 // ---------------- CORE CALCULATION ENGINE ----------------
 function computeTierDetails(mat, tLabel) {
-  const tArr = (mat === 'Stone') ? TIERS_STONE : TIERS_ALL;
-  const t = tArr.find(x => x.label === tLabel);
+  const t = TIERS_ALL.find(x => x.label === tLabel);
   if (!t) return null;
 
   const data = window.SAVED_STORE[mat][tLabel] || {raw: "0", sell: "0"};
   const rawPrice = parseFloat(data.raw) || 0;
-  const sellPrice = parseFloat(data.sell) || 0;
-  
+  let sellPrice = parseFloat(data.sell) || 0;
+
+  if (mat === 'Stone' && t.enc > 0) {
+    const flatData = window.SAVED_STORE[mat][tLabel.split('.')[0] + '.0'];
+    if (flatData && flatData.sell) {
+      sellPrice = parseFloat(flatData.sell) || 0;
+    }
+  }
+
   let prevPrice = 0;
-  if (t.prevQty > 0 && t.prevLbl !== '-') {
-    const prevData = window.SAVED_STORE[mat][t.prevLbl];
+  let actualPrevLbl = t.prevLbl;
+  if (mat === 'Stone' && t.tier > 2) {
+      actualPrevLbl = 'T' + (t.tier - 1);
+      if (t.tier - 1 >= 4) actualPrevLbl += '.0';
+  }
+
+  if (t.prevQty > 0 && actualPrevLbl !== '-') {
+    const prevData = window.SAVED_STORE[mat][actualPrevLbl];
     if (prevData && prevData.sell) {
       prevPrice = parseFloat(prevData.sell) || 0;
     }
@@ -420,7 +463,6 @@ function computeTierDetails(mat, tLabel) {
   if (rawPrice <= 0 || sellPrice <= 0) return null;
 
   const cfg = window.SAVED_STORE.config;
-  
   let baseTax = 0.08;
   if (cfg.taxStatus === 'premium') baseTax = 0.04;
   if (cfg.taxStatus === 'none') baseTax = 0.00;
@@ -431,24 +473,42 @@ function computeTierDetails(mat, tLabel) {
   const rrr = (parseFloat(cfg.refRrr) || 0) / 100;
   const statFee = parseFloat(cfg.fee) || 0;
   const buyMult = cfg.buyOrder ? 1.025 : 1;
+  const heartPrice = parseFloat(cfg.heartPrice) || 0;
 
-  const grossMatCost = ((t.rawQty * rawPrice) + (t.prevQty * prevPrice)) * buyMult;
+  let outQty = (mat === 'Stone') ? (2 ** t.enc) : 1;
+  let actualPrevQty = (mat === 'Stone') ? (t.prevQty * outQty) : t.prevQty;
+
+  let useHeart = false;
+  let heartSavings = 0;
+  let rawCostBase = t.rawQty * rawPrice;
+  if (mat !== 'Stone' && t.tier >= 4 && heartPrice > 0) {
+      let rawCostHeart = (t.rawQty - 1) * rawPrice + heartPrice;
+      if (rawCostHeart < rawCostBase) {
+          useHeart = true;
+          heartSavings = (rawCostBase - rawCostHeart) * buyMult * (1 - rrr);
+          rawCostBase = rawCostHeart;
+      }
+  }
+
+  const grossMatCost = (rawCostBase + (actualPrevQty * prevPrice)) * buyMult;
   const netMatCost = grossMatCost * (1 - rrr);
   const stationFee = t.iv * 0.1125 * (statFee / 100);
-  const netRev = sellPrice * (1 - totalSellTax);
+  const netRev = (outQty * sellPrice) * (1 - totalSellTax);
   
   const profit = netRev - netMatCost - stationFee;
-  const stackProfit = profit * 999;
-  const capitalSpent = (netMatCost + stationFee) * 999;
-  
-  const roi = (capitalSpent > 0) ? (profit * 999 / capitalSpent) * 100 : 0;
+  const craftsPerStack = 999 / outQty;
+  const stackProfit = profit * craftsPerStack;
+  const capitalSpent = (netMatCost + stationFee) * craftsPerStack;
+  const roi = (capitalSpent > 0) ? (stackProfit / capitalSpent) * 100 : 0;
+
+  let ratio = `${t.rawQty} Raw + ${actualPrevQty} Refined`;
+  if (useHeart) ratio = `${t.rawQty - 1} Raw + 1 Heart + ${actualPrevQty} Refined`;
+  if (mat === 'Stone' && t.enc > 0) ratio += ` ➔ Yields ${outQty} Blocks`;
 
   return {
-    ratio: `${t.rawQty} Raw + ${t.prevQty} Refined`,
-    raw: rawPrice,
-    prev: prevPrice,
-    sell: sellPrice,
-    grossMatCost, netMatCost, stationFee, netRev, profit, stackProfit, capitalSpent, roi
+    ratio, raw: rawPrice, prev: prevPrice, sell: sellPrice, tierLabel: t.label,
+    grossMatCost, netMatCost, stationFee, netRev, profit, stackProfit, capitalSpent, roi,
+    useHeart, heartSavings
   };
 }
 
@@ -460,15 +520,10 @@ function renderOverview() {
   let hasData = false;
   
   mats.forEach(mat => {
-    const tArr = (mat === 'Stone') ? TIERS_STONE : TIERS_ALL;
-    
     let resultsList = [];
-    tArr.forEach(t => {
+    TIERS_ALL.forEach(t => {
       const res = computeTierDetails(mat, t.label);
-      if (res) {
-        res.tierLabel = t.label;
-        resultsList.push(res);
-      }
+      if (res) resultsList.push(res);
     });
     
     if (resultsList.length > 0) {
@@ -481,10 +536,11 @@ function renderOverview() {
         const pClass = res.profit > 0 ? 'profit-pos' : (res.profit < 0 ? 'profit-neg' : 'profit-neutral');
         const pSign = res.profit > 0 ? '+' : '';
         const roiColor = res.roi > 0 ? '#a371f7' : '#8b949e';
+        const heartBadge = res.useHeart ? ' ❤️' : '';
         
         tbody.innerHTML += `
           <tr>
-            <td>${res.tierLabel}</td>
+            <td>${res.tierLabel}${heartBadge}</td>
             <td>${res.raw}</td>
             <td>${res.prev}</td>
             <td class="${pClass}">${pSign}${formatSilver(res.stackProfit)}</td>
@@ -513,11 +569,10 @@ function setIndMat(mat) {
 }
 
 function updateIndTiers() {
-  const tArr = (currentIndMat === 'Stone') ? TIERS_STONE : TIERS_ALL;
   const container = document.getElementById('ind-tier-pills');
   container.innerHTML = '';
   
-  tArr.forEach(t => {
+  TIERS_ALL.forEach(t => {
     const pill = document.createElement('div');
     pill.className = 'tier-pill' + (selectedIndTier === t.label ? ' active' : '');
     pill.innerText = t.label;
@@ -570,6 +625,7 @@ function renderIndividual() {
       <span style="color:var(--text-muted);">Recipe Ratio:</span>
       <span>${res.ratio}</span>
     </div>
+    ${res.useHeart ? `<div class="stat-line" style="margin-bottom:8px;"><span style="color:#ff7b72; font-weight:bold;">❤️ Faction Heart Active:</span><span style="color:#ff7b72;">Saved ${formatSilver(res.heartSavings)} / craft</span></div>` : ''}
     <div class="stat-line" style="margin-top:8px;">
       <span style="color:var(--text-muted);">Loaded Raw Material Price:</span>
       <span>${formatSilver(res.raw)} Silver</span>
@@ -623,17 +679,17 @@ function renderIndividual() {
 // ---------------- CRAFTING SYSTEM ----------------
 function loadCr() {
   const c = window.SAVED_STORE.crafting || {};
-  document.getElementById('cr-sell').value = c.sell !== undefined ? c.sell : "0"; 
-  document.getElementById('cr-iv').value = c.iv !== undefined ? c.iv : "0";
-  document.getElementById('cr-r1-q').value = c.r1q !== undefined ? c.r1q : "0"; 
-  document.getElementById('cr-r1-p').value = c.r1p !== undefined ? c.r1p : "0";
-  document.getElementById('cr-r2-q').value = c.r2q !== undefined ? c.r2q : "0"; 
-  document.getElementById('cr-r2-p').value = c.r2p !== undefined ? c.r2p : "0";
-  document.getElementById('cr-r3-q').value = c.r3q !== undefined ? c.r3q : "0"; 
-  document.getElementById('cr-r3-p').value = c.r3p !== undefined ? c.r3p : "0";
-  document.getElementById('cr-je').value = c.je !== undefined ? c.je : "0"; 
-  document.getElementById('cr-jf').value = c.jf !== undefined ? c.jf : "0";
-  document.getElementById('cr-jq').value = c.jq !== undefined ? c.jq : "0"; 
+  document.getElementById('cr-sell').value = (c.sell !== undefined && c.sell !== "") ? c.sell : "0"; 
+  document.getElementById('cr-iv').value = (c.iv !== undefined && c.iv !== "") ? c.iv : "0";
+  document.getElementById('cr-r1-q').value = (c.r1q !== undefined && c.r1q !== "") ? c.r1q : "0"; 
+  document.getElementById('cr-r1-p').value = (c.r1p !== undefined && c.r1p !== "") ? c.r1p : "0";
+  document.getElementById('cr-r2-q').value = (c.r2q !== undefined && c.r2q !== "") ? c.r2q : "0"; 
+  document.getElementById('cr-r2-p').value = (c.r2p !== undefined && c.r2p !== "") ? c.r2p : "0";
+  document.getElementById('cr-r3-q').value = (c.r3q !== undefined && c.r3q !== "") ? c.r3q : "0"; 
+  document.getElementById('cr-r3-p').value = (c.r3p !== undefined && c.r3p !== "") ? c.r3p : "0";
+  document.getElementById('cr-je').value = (c.je !== undefined && c.je !== "") ? c.je : "0"; 
+  document.getElementById('cr-jf').value = (c.jf !== undefined && c.jf !== "") ? c.jf : "0";
+  document.getElementById('cr-jq').value = (c.jq !== undefined && c.jq !== "") ? c.jq : "0"; 
   calcCr();
 }
 
@@ -715,8 +771,6 @@ function calcCr() {
 
 // ---------------- RESET SYSTEM ----------------
 function resetAllValues() {
-  if (!confirm("Are you sure you want to reset all prices and crafting numbers to 0?")) return;
-  
   ['Leather', 'Cloth', 'Metal', 'Planks', 'Stone'].forEach(mat => {
     window.SAVED_STORE[mat] = {};
   });
@@ -724,17 +778,41 @@ function resetAllValues() {
   window.SAVED_STORE.crafting = {
     sell: "0", iv: "0", r1q: "0", r1p: "0", r2q: "0", r2p: "0", r3q: "0", r3p: "0", je: "0", jf: "0", jq: "0"
   };
+
+  window.SAVED_STORE.config = { ...DEFAULT_CONFIG };
   
   persistData();
+  loadConfig();
   renderPriceInputs();
   renderOverview();
   renderIndividual();
   loadCr();
   
-  const banner = document.getElementById('action-banner');
-  banner.textContent = "✓ All values reset to 0!";
+  const banner = document.getElementById('save-banner');
+  banner.textContent = "✓ All values reset to 0 & defaults restored!";
   banner.style.display = 'block';
   setTimeout(() => { banner.style.display = 'none'; }, 3000);
+}
+
+function downloadBakedFile() {
+  updateConfig();
+  const scriptTag = document.getElementById('embedded-data');
+  if (scriptTag) {
+    scriptTag.textContent = "\nwindow.SAVED_STORE = " + JSON.stringify(window.SAVED_STORE, null, 2) + ";\n";
+  }
+  const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([htmlContent], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Albion_Calculator.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  const banner = document.getElementById('save-banner');
+  banner.textContent = "✓ Data baked into file! Saved to Downloads.";
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 4000);
 }
 
 window.onload = function() {
@@ -742,7 +820,10 @@ window.onload = function() {
   if (saved) {
     try { 
       window.SAVED_STORE = JSON.parse(saved); 
+      if (!window.SAVED_STORE.config) window.SAVED_STORE.config = {};
+      if (window.SAVED_STORE.config.buyOrder === undefined) window.SAVED_STORE.config.buyOrder = true;
       if (!window.SAVED_STORE.config.craftRrr) window.SAVED_STORE.config.craftRrr = "24.8";
+      if (!window.SAVED_STORE.config.heartPrice) window.SAVED_STORE.config.heartPrice = "35000";
       if (!window.SAVED_STORE.crafting) window.SAVED_STORE.crafting = {}; 
     } catch(e) {}
   }
