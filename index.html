@@ -77,6 +77,7 @@
   .tier-pill { background: var(--card); border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 4px; text-align: center; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.15s; }
   .tier-pill.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); font-weight: 700; }
   .tier-pill:hover { border-color: var(--accent-blue); }
+  .focus-highlight { color: #f2cc60; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -122,13 +123,25 @@
 
     <div style="border-bottom: 1px solid var(--card-border); margin: 12px 0;"></div>
 
-    <div class="form-group">
-      <label>Refining Resource Return Rate (RRR %)</label>
-      <input type="number" id="cfg-refine-rrr" step="0.1" value="36.7" oninput="updateConfig()">
+    <div class="row">
+      <div class="form-group">
+        <label>Refining RRR %</label>
+        <input type="number" id="cfg-refine-rrr" step="0.1" value="36.7" oninput="updateConfig()">
+      </div>
+      <div class="form-group">
+        <label class="focus-highlight">Focus Refine RRR %</label>
+        <input type="number" id="cfg-refine-focus-rrr" step="0.1" value="53.9" oninput="updateConfig()">
+      </div>
     </div>
-    <div class="form-group">
-      <label>Crafting Resource Return Rate (RRR %)</label>
-      <input type="number" id="cfg-craft-rrr" step="0.1" value="24.8" oninput="updateConfig()">
+    <div class="row">
+      <div class="form-group">
+        <label>Crafting RRR %</label>
+        <input type="number" id="cfg-craft-rrr" step="0.1" value="24.8" oninput="updateConfig()">
+      </div>
+      <div class="form-group">
+        <label class="focus-highlight">Focus Craft RRR %</label>
+        <input type="number" id="cfg-craft-focus-rrr" step="0.1" value="47.9" oninput="updateConfig()">
+      </div>
     </div>
     <div class="form-group">
       <label>Global Station Fee (Silver per 100 nutrition)</label>
@@ -215,6 +228,11 @@
       <div class="custom-tier-grid" id="ind-tier-pills"></div>
     </div>
 
+    <div class="form-group" style="margin-top:16px;">
+      <label class="focus-highlight">Focus Cost per Craft (Leave 0 to ignore)</label>
+      <input type="number" id="ind-focus-cost" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="renderIndividual()">
+    </div>
+
     <div class="results" id="ind-results-container">
       <div style="text-align:center; color: var(--text-muted); font-size: 0.85rem; padding: 16px;">
         Tap a tier above to inspect its breakdown.
@@ -228,6 +246,16 @@
   <div class="card">
     <div class="card-title">Crafting Calculator</div>
     
+    <div class="form-group">
+      <label>Item Category</label>
+      <select id="cr-category" onchange="saveCr()">
+        <option value="gear" selected>Standard Gear (Weapons, Armor, Tools) - Yield 1</option>
+        <option value="food">Food (Stew, Pie, Omelette, etc.) - Yield 10</option>
+        <option value="potion">Alchemy (Potions) - Yield 5</option>
+      </select>
+    </div>
+
+    <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
     <div class="stat-line"><span style="font-weight:bold; color:var(--text)">Ingredients</span></div>
     
     <div class="row">
@@ -246,7 +274,7 @@
     <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
     
     <div class="row">
-      <div class="form-group" style="flex:2"><label>Target Item Sell Price</label><input type="number" id="cr-sell" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()"></div>
+      <div class="form-group" style="flex:2"><label>Target Item Sell Price (Each)</label><input type="number" id="cr-sell" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()"></div>
       <div class="form-group" style="flex:1"><label>Item Value (IV)</label><input type="number" id="cr-iv" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()" placeholder="0"></div>
     </div>
 
@@ -256,6 +284,12 @@
       <div class="form-group" style="flex:1"><label>Empty Buy</label><input type="number" id="cr-je" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()"></div>
       <div class="form-group" style="flex:1"><label>Full Sell</label><input type="number" id="cr-jf" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()"></div>
       <div class="form-group" style="flex: 0 0 80px;"><label>Yield</label><input type="number" id="cr-jq" step="0.01" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()" placeholder="0"></div>
+    </div>
+    
+    <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
+    <div class="form-group">
+      <label class="focus-highlight">Focus Cost per Action (Leave 0 to ignore)</label>
+      <input type="number" id="cr-focus-cost" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()">
     </div>
   </div>
 
@@ -272,7 +306,9 @@ const DEFAULT_CONFIG = {
   sellOrder: true, 
   buyOrder: true, 
   refRrr: "36.7", 
+  refFocusRrr: "53.9",
   craftRrr: "24.8", 
+  craftFocusRrr: "47.9",
   fee: "450",
   heartPrice: "35000"
 };
@@ -346,7 +382,9 @@ function updateConfig() {
     sellOrder: document.getElementById('cfg-sell-order').checked,
     buyOrder: document.getElementById('cfg-buy-order').checked,
     refRrr: document.getElementById('cfg-refine-rrr').value,
+    refFocusRrr: document.getElementById('cfg-refine-focus-rrr').value,
     craftRrr: document.getElementById('cfg-craft-rrr').value,
+    craftFocusRrr: document.getElementById('cfg-craft-focus-rrr').value,
     fee: document.getElementById('cfg-station-fee').value,
     heartPrice: document.getElementById('cfg-heart-price').value
   };
@@ -362,7 +400,9 @@ function loadConfig() {
   document.getElementById('cfg-sell-order').checked = cfg.sellOrder !== undefined ? cfg.sellOrder : true;
   document.getElementById('cfg-buy-order').checked = cfg.buyOrder !== undefined ? cfg.buyOrder : true;
   document.getElementById('cfg-refine-rrr').value = cfg.refRrr || '36.7';
+  document.getElementById('cfg-refine-focus-rrr').value = cfg.refFocusRrr || '53.9';
   document.getElementById('cfg-craft-rrr').value = cfg.craftRrr || '24.8';
+  document.getElementById('cfg-craft-focus-rrr').value = cfg.craftFocusRrr || '47.9';
   document.getElementById('cfg-station-fee').value = cfg.fee || '450';
   document.getElementById('cfg-heart-price').value = cfg.heartPrice || '35000';
 }
@@ -461,6 +501,7 @@ function computeTierDetails(mat, tLabel) {
   const totalSellTax = baseTax + sellSetupFee;
 
   const rrr = (parseFloat(cfg.refRrr) || 0) / 100;
+  const focusRrr = (parseFloat(cfg.refFocusRrr) || 0) / 100;
   const statFee = parseFloat(cfg.fee) || 0;
   const buyMult = cfg.buyOrder ? 1.025 : 1;
   const heartPrice = parseFloat(cfg.heartPrice) || 0;
@@ -482,10 +523,14 @@ function computeTierDetails(mat, tLabel) {
 
   const grossMatCost = (rawCostBase + (actualPrevQty * prevPrice)) * buyMult;
   const netMatCost = grossMatCost * (1 - rrr);
+  const netMatCostFocus = grossMatCost * (1 - focusRrr);
+  
   const stationFee = t.iv * 0.1125 * (statFee / 100);
   const netRev = (outQty * sellPrice) * (1 - totalSellTax);
   
   const profit = netRev - netMatCost - stationFee;
+  const focusProfit = netRev - netMatCostFocus - stationFee;
+  
   const craftsPerStack = 999 / outQty;
   const stackProfit = profit * craftsPerStack;
   const capitalSpent = (netMatCost + stationFee) * craftsPerStack;
@@ -498,7 +543,7 @@ function computeTierDetails(mat, tLabel) {
   return {
     ratio, raw: rawPrice, prev: prevPrice, sell: sellPrice, tierLabel: t.label,
     grossMatCost, netMatCost, stationFee, netRev, profit, stackProfit, capitalSpent, roi,
-    useHeart, heartSavings
+    useHeart, heartSavings, focusProfit
   };
 }
 
@@ -609,6 +654,18 @@ function renderIndividual() {
   const pClass = res.profit > 0 ? 'profit-pos' : (res.profit < 0 ? 'profit-neg' : 'profit-neutral');
   const pSign = res.profit > 0 ? '+' : '';
   const roiColor = res.roi > 0 ? '#a371f7' : '#8b949e';
+  
+  const focusCost = parseFloat(document.getElementById('ind-focus-cost').value) || 0;
+  let focusHtml = '';
+  if (focusCost > 0) {
+      const extraProfit = res.focusProfit - res.profit;
+      const spf = extraProfit / focusCost;
+      focusHtml = `
+      <div class="stat-line total-cost" style="border-top-color:#f2cc60;">
+        <span class="focus-highlight">Silver per Focus Point:</span>
+        <span class="focus-highlight">${formatSilver(spf)} s/f</span>
+      </div>`;
+  }
 
   cont.innerHTML = `
     <div class="stat-line">
@@ -663,12 +720,14 @@ function renderIndividual() {
       <span>Profit per 999 Stack:</span>
       <span class="${pClass}">${pSign}${formatSilver(res.stackProfit)} Silver</span>
     </div>
+    ${focusHtml}
   `;
 }
 
 // ---------------- CRAFTING SYSTEM ----------------
 function loadCr() {
   const c = window.SAVED_STORE.crafting || {};
+  document.getElementById('cr-category').value = c.cat || "gear";
   document.getElementById('cr-sell').value = (c.sell !== undefined && c.sell !== "") ? c.sell : "0"; 
   document.getElementById('cr-iv').value = (c.iv !== undefined && c.iv !== "") ? c.iv : "0";
   document.getElementById('cr-r1-q').value = (c.r1q !== undefined && c.r1q !== "") ? c.r1q : "0"; 
@@ -680,11 +739,13 @@ function loadCr() {
   document.getElementById('cr-je').value = (c.je !== undefined && c.je !== "") ? c.je : "0"; 
   document.getElementById('cr-jf').value = (c.jf !== undefined && c.jf !== "") ? c.jf : "0";
   document.getElementById('cr-jq').value = (c.jq !== undefined && c.jq !== "") ? c.jq : "0"; 
+  document.getElementById('cr-focus-cost').value = (c.fcost !== undefined && c.fcost !== "") ? c.fcost : "0"; 
   calcCr();
 }
 
 function saveCr() {
   window.SAVED_STORE.crafting = {
+    cat: document.getElementById('cr-category').value,
     sell: document.getElementById('cr-sell').value || "0", 
     iv: document.getElementById('cr-iv').value || "0",
     r1q: document.getElementById('cr-r1-q').value || "0", 
@@ -695,7 +756,8 @@ function saveCr() {
     r3p: document.getElementById('cr-r3-p').value || "0",
     je: document.getElementById('cr-je').value || "0", 
     jf: document.getElementById('cr-jf').value || "0",
-    jq: document.getElementById('cr-jq').value || "0"
+    jq: document.getElementById('cr-jq').value || "0",
+    fcost: document.getElementById('cr-focus-cost').value || "0"
   };
   persistData(); 
   calcCr();
@@ -705,11 +767,18 @@ function calcCr() {
   const c = window.SAVED_STORE.crafting || {}; 
   const cfg = window.SAVED_STORE.config;
   
+  const category = c.cat || "gear";
+  let yieldMult = 1;
+  let feeMult = 0.1125;
+  if (category === "food") { yieldMult = 10; feeMult = 0.01125; }
+  else if (category === "potion") { yieldMult = 5; feeMult = 0.01125; }
+
   let baseTax = cfg.taxStatus === 'premium' ? 0.04 : (cfg.taxStatus === 'none' ? 0.00 : 0.08);
   const totalSellTax = baseTax + (cfg.sellOrder ? 0.025 : 0);
   const buyMult = cfg.buyOrder ? 1.025 : 1;
   
   const rrr = (parseFloat(cfg.craftRrr) || 0) / 100; 
+  const focusRrr = (parseFloat(cfg.craftFocusRrr) || 0) / 100; 
   const fee = parseFloat(cfg.fee) || 0; 
   const iv = parseFloat(c.iv) || 0;
 
@@ -719,13 +788,15 @@ function calcCr() {
 
   const grossRrrMat = (r1c + r2c) * buyMult;
   const netRrrMat = grossRrrMat * (1 - rrr);
+  const netRrrMatFocus = grossRrrMat * (1 - focusRrr);
   
   const grossNoRrrMat = r3c * buyMult;
   
   const grossMatCost = grossRrrMat + grossNoRrrMat;
   const totalNetMatCost = netRrrMat + grossNoRrrMat;
+  const totalNetMatCostFocus = netRrrMatFocus + grossNoRrrMat;
   
-  const stationFee = iv * 0.1125 * (fee / 100);
+  const stationFee = iv * feeMult * (fee / 100);
   
   const jq = parseFloat(c.jq) || 0; 
   const je = parseFloat(c.je) || 0; 
@@ -736,10 +807,11 @@ function calcCr() {
   const jrnProfit = journalRev - journalCost;
   
   const sellPrice = parseFloat(c.sell) || 0;
-  const netRev = sellPrice * (1 - totalSellTax);
+  const netRev = (sellPrice * yieldMult) * (1 - totalSellTax);
   
   const capitalSpent = grossMatCost + stationFee + journalCost;
   const profit = netRev + jrnProfit - totalNetMatCost - stationFee;
+  const focusProfit = netRev + jrnProfit - totalNetMatCostFocus - stationFee;
   
   const roi = capitalSpent > 0 ? (profit / capitalSpent) * 100 : 0;
   
@@ -747,7 +819,20 @@ function calcCr() {
   const pSign = profit > 0 ? '+' : '';
   const roiColor = roi > 0 ? '#a371f7' : '#8b949e';
 
+  const focusCost = parseFloat(c.fcost) || 0;
+  let focusHtml = '';
+  if (focusCost > 0) {
+      const extraProfit = focusProfit - profit;
+      const spf = extraProfit / focusCost;
+      focusHtml = `
+      <div class="stat-line total-cost" style="border-top-color:#f2cc60;">
+        <span class="focus-highlight">Silver per Focus Point:</span>
+        <span class="focus-highlight">${formatSilver(spf)} s/f</span>
+      </div>`;
+  }
+
   document.getElementById('cr-results').innerHTML = `
+    <div class="stat-line"><span style="color:var(--text-muted);">Items Yielded:</span><span style="color:#58a6ff; font-weight:bold;">${yieldMult}</span></div>
     <div class="stat-line"><span style="color:var(--text-muted);">Gross Material Cost:</span><span>${formatSilver(grossMatCost)}</span></div>
     <div class="stat-line"><span style="color:var(--text-muted);">Net Materials (Post-RRR):</span><span>${formatSilver(totalNetMatCost)}</span></div>
     <div class="stat-line"><span style="color:var(--text-muted);">Station Crafting Fee:</span><span>${formatSilver(stationFee)}</span></div>
@@ -756,6 +841,7 @@ function calcCr() {
     <div class="stat-line total-cost"><span>Capital Required:</span><span>${formatSilver(capitalSpent)}</span></div>
     <div class="stat-line total"><span>Return on Investment (ROI):</span><span style="color:${roiColor}">${roi.toFixed(2)}%</span></div>
     <div class="stat-line total" style="margin-top: 2px;"><span>Total Craft Profit:</span><span class="${pClass}">${pSign}${formatSilver(profit)}</span></div>
+    ${focusHtml}
   `;
 }
 
@@ -766,7 +852,7 @@ function resetAllValues() {
   });
   
   window.SAVED_STORE.crafting = {
-    sell: "0", iv: "0", r1q: "0", r1p: "0", r2q: "0", r2p: "0", r3q: "0", r3p: "0", je: "0", jf: "0", jq: "0"
+    cat: "gear", sell: "0", iv: "0", r1q: "0", r1p: "0", r2q: "0", r2p: "0", r3q: "0", r3p: "0", je: "0", jf: "0", jq: "0", fcost: "0"
   };
 
   window.SAVED_STORE.config = { ...DEFAULT_CONFIG };
@@ -792,6 +878,8 @@ window.onload = function() {
       if (!window.SAVED_STORE.config) window.SAVED_STORE.config = {};
       if (window.SAVED_STORE.config.buyOrder === undefined) window.SAVED_STORE.config.buyOrder = true;
       if (!window.SAVED_STORE.config.craftRrr) window.SAVED_STORE.config.craftRrr = "24.8";
+      if (!window.SAVED_STORE.config.refFocusRrr) window.SAVED_STORE.config.refFocusRrr = "53.9";
+      if (!window.SAVED_STORE.config.craftFocusRrr) window.SAVED_STORE.config.craftFocusRrr = "47.9";
       if (!window.SAVED_STORE.config.heartPrice) window.SAVED_STORE.config.heartPrice = "35000";
       if (!window.SAVED_STORE.crafting) window.SAVED_STORE.crafting = {}; 
     } catch(e) {}
