@@ -229,9 +229,9 @@
     </div>
     <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
     
-    <!-- FULL OFFICIAL WIKI AUTO-CALCULATE ENGINE -->
+    <!-- ITEM VALUE (IV) CALCULATOR -->
     <div id="iv-calculator-box" style="background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-      <div style="font-size: 0.75rem; color: #58a6ff; font-weight: bold; text-transform: uppercase; margin-bottom: 6px;">Official Wiki Item Value (IV) Formula</div>
+      <div style="font-size: 0.75rem; color: #58a6ff; font-weight: bold; text-transform: uppercase; margin-bottom: 6px;">Item Value (IV) Calculator</div>
       
       <label style="margin-bottom: 3px;">Item Tier</label>
       <div class="pill-row" id="iv-tier-pills" style="margin-bottom: 8px;">
@@ -269,7 +269,7 @@
         </div>
       </div>
 
-      <button class="iv-action-btn" onclick="applyOfficialIV()">⚡ Apply Official IV Formula</button>
+      <button class="iv-action-btn" onclick="applyOfficialIV()">⚡ Calculate Item Value (IV)</button>
     </div>
 
     <div class="row">
@@ -295,7 +295,7 @@
   <div class="results" id="cr-results" style="padding: 16px;"></div>
 
   <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:12px; margin-bottom:8px; padding:0 10px;">
-    * Implements official Albion Wiki Item Value formula. Consumables (Food/Potion) are zero IV.
+    * Enter or calculate the exact Item Value (IV) to compute station crafting fees. Leave as 0 to omit.
   </div>
 </div>
 
@@ -408,7 +408,7 @@ function applyOfficialIV() {
   if (c.cat === "food" || c.cat === "potion") {
     document.getElementById('cr-iv').value = 0;
     saveCr();
-    showToast("✓ Food & Potions have 0 Item Value in Albion!");
+    showToast("✓ Food & Potions have 0 Item Value!");
     return;
   }
 
@@ -417,14 +417,10 @@ function applyOfficialIV() {
   const numItems = q1 + q2;
   
   if (numItems === 0) {
-    showToast("⚠️ Enter ingredient quantities (Resource 1/2) first!", true);
+    showToast("⚠️ Enter ingredient quantities first!", true);
     return;
   }
   
-  // Exact Albion Wiki Formula:
-  // Base = 16 * 2^(Tier + Enchant - 4)
-  // Artifact = artifactMultiplier * 2^(Tier - 4)
-  // ItemValue = NumItems * (Base + Artifact) * ShapeShifter
   const base = 16 * Math.pow(2, (selectedIvTier + selectedIvEnc - 4));
   const artVal = selectedIvArtMult * Math.pow(2, (selectedIvTier - 4));
   const shapeshifterScalar = isShapeshifter ? (16 / 11) : 1;
@@ -433,7 +429,7 @@ function applyOfficialIV() {
   
   document.getElementById('cr-iv').value = totalIV;
   saveCr();
-  showToast(`✓ Official IV Calculated: ${totalIV}`);
+  showToast(`✓ Item Value Set: ${totalIV}`);
 }
 
 function formatSilver(val) { return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
