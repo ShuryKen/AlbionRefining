@@ -39,7 +39,7 @@ jobs:
 
           npx cap add android
 
-          # Update both legacy mipmaps and modern Android adaptive icon foregrounds
+          # Update legacy mipmaps and modern Android adaptive icon foregrounds
           if [ -f "icon.png" ]; then
             RES_DIR="android/app/src/main/res"
 
