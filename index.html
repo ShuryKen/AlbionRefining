@@ -27,6 +27,7 @@
   .reset-btn { background: #da3633; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
   .reset-btn:active { background: #b62324; }
   .toast-alert { display: none; background: #238636; color: white; padding: 10px; border-radius: 8px; margin: 10px 14px 0; font-size: 0.82rem; text-align: center; }
+  .toast-alert.error { background: #da3633; }
   
   .tabs-scroll { display: flex; overflow-x: auto; background: var(--input-bg); padding: 4px; border-radius: 8px; margin: 12px 14px 4px; gap: 4px; border: 1px solid var(--card-border); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .tabs-scroll::-webkit-scrollbar { display: none; }
@@ -77,9 +78,15 @@
   .tier-pill { background: var(--card); border: 1px solid var(--card-border); color: var(--text-muted); padding: 7px 4px; text-align: center; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.15s; }
   .tier-pill.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); font-weight: 700; }
   .tier-pill:hover { border-color: var(--accent-blue); }
+
+  .pill-row { display: flex; gap: 4px; background: var(--input-bg); border: 1px solid var(--input-border); padding: 3px; border-radius: 6px; overflow-x: auto; scrollbar-width: none; }
+  .pill-row::-webkit-scrollbar { display: none; }
+  .sub-pill { flex: 1 0 auto; text-align: center; padding: 6px 10px; font-size: 0.8rem; font-weight: 600; border-radius: 4px; cursor: pointer; color: var(--text-muted); transition: 0.15s; border: none; background: none; }
+  .sub-pill.active { background: var(--card-border); color: #58a6ff; font-weight: 700; }
+  .sub-pill.disabled { opacity: 0.35; pointer-events: none; }
   
-  .iv-auto-btn { background: var(--card-border); color: #58a6ff; font-weight: bold; border: none; padding: 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
-  .iv-auto-btn:active { background: #30363d; }
+  .iv-action-btn { background: #238636; color: #fff; font-weight: 700; border: none; width: 100%; padding: 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+  .iv-action-btn:active { background: #1f6feb; }
 </style>
 </head>
 <body>
@@ -222,30 +229,58 @@
     </div>
     <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
     
-    <div class="row" style="align-items: flex-end;">
-      <div class="form-group" style="flex:1; margin-bottom: 0;">
+    <!-- FULL OFFICIAL WIKI AUTO-CALCULATE ENGINE -->
+    <div id="iv-calculator-box" style="background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+      <div style="font-size: 0.75rem; color: #58a6ff; font-weight: bold; text-transform: uppercase; margin-bottom: 6px;">Official Wiki Item Value (IV) Formula</div>
+      
+      <label style="margin-bottom: 3px;">Item Tier</label>
+      <div class="pill-row" id="iv-tier-pills" style="margin-bottom: 8px;">
+        <button class="sub-pill" onclick="selectIvTier(2)">T2</button>
+        <button class="sub-pill" onclick="selectIvTier(3)">T3</button>
+        <button class="sub-pill active" onclick="selectIvTier(4)">T4</button>
+        <button class="sub-pill" onclick="selectIvTier(5)">T5</button>
+        <button class="sub-pill" onclick="selectIvTier(6)">T6</button>
+        <button class="sub-pill" onclick="selectIvTier(7)">T7</button>
+        <button class="sub-pill" onclick="selectIvTier(8)">T8</button>
+      </div>
+      
+      <label style="margin-bottom: 3px;">Enchantment</label>
+      <div class="pill-row" id="iv-enc-pills" style="margin-bottom: 8px;">
+        <button class="sub-pill active" onclick="selectIvEnc(0)">.0</button>
+        <button class="sub-pill" onclick="selectIvEnc(1)">.1</button>
+        <button class="sub-pill" onclick="selectIvEnc(2)">.2</button>
+        <button class="sub-pill" onclick="selectIvEnc(3)">.3</button>
+        <button class="sub-pill" onclick="selectIvEnc(4)">.4</button>
+      </div>
+
+      <label style="margin-bottom: 3px;">Artifact Type</label>
+      <div class="pill-row" id="iv-art-pills" style="margin-bottom: 8px;">
+        <button class="sub-pill active" onclick="selectIvArt(0, 'Standard')">None (0)</button>
+        <button class="sub-pill" onclick="selectIvArt(4, 'Rune')">Rune (4)</button>
+        <button class="sub-pill" onclick="selectIvArt(12, 'Soul')">Soul (12)</button>
+        <button class="sub-pill" onclick="selectIvArt(28, 'Relic/Mist')">Relic/Mist (28)</button>
+        <button class="sub-pill" onclick="selectIvArt(60, 'Ava/Crystal')">Ava/Crystal (60)</button>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 4px 2px;">
+        <div style="display:flex; align-items:center;">
+          <input type="checkbox" id="iv-shapeshifter" onchange="toggleShapeshifter()">
+          <label for="iv-shapeshifter" style="text-transform:none; font-size:0.8rem; color:var(--text); cursor:pointer;">🐺 Shapeshifter Weapon (1 5/11 scalar)</label>
+        </div>
+      </div>
+
+      <button class="iv-action-btn" onclick="applyOfficialIV()">⚡ Apply Official IV Formula</button>
+    </div>
+
+    <div class="row">
+      <div class="form-group" style="flex:2">
+        <label>Target Item Sell Price (Each)</label>
+        <input type="number" id="cr-sell" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()">
+      </div>
+      <div class="form-group" style="flex:1">
         <label>Item Value (IV)</label>
         <input type="number" id="cr-iv" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()" placeholder="0">
       </div>
-      <div class="form-group" style="flex: 0 0 auto; margin-bottom: 0;">
-        <label style="color:#58a6ff;">Auto-Calculate</label>
-        <div class="row">
-          <select id="cr-auto-tier" style="width: 70px;">
-            <option value="4">T4</option><option value="5">T5</option><option value="6">T6</option><option value="7">T7</option><option value="8">T8</option>
-          </select>
-          <select id="cr-auto-enc" style="width: 70px;">
-            <option value="0">.0</option><option value="1">.1</option><option value="2">.2</option><option value="3">.3</option><option value="4">.4</option>
-          </select>
-          <button class="iv-auto-btn" onclick="autoCalcIV()">Apply IV</button>
-        </div>
-      </div>
-    </div>
-
-    <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
-    
-    <div class="form-group">
-      <label>Target Item Sell Price (Each)</label>
-      <input type="number" id="cr-sell" value="0" onfocus="if(this.value=='0')this.value='';" onblur="if(this.value=='')this.value='0';" oninput="saveCr()">
     </div>
 
     <div style="border-bottom:1px solid var(--card-border); margin:12px 0;"></div>
@@ -260,7 +295,7 @@
   <div class="results" id="cr-results" style="padding: 16px;"></div>
 
   <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:12px; margin-bottom:8px; padding:0 10px;">
-    * Use the Auto-Calculate IV tool to instantly generate exact Item Value for standard crafted gear.
+    * Implements official Albion Wiki Item Value formula. Consumables (Food/Potion) are zero IV.
   </div>
 </div>
 
@@ -299,6 +334,107 @@ const TIERS_ALL = [
 ];
 
 let currentPriceMat = 'Leather'; let currentIndMat = 'Leather'; let selectedIndTier = null;
+let selectedIvTier = 4;
+let selectedIvEnc = 0;
+let selectedIvArtMult = 0;
+let isShapeshifter = false;
+
+function showToast(msg, isError = false) {
+  const banner = document.getElementById('toast-banner');
+  banner.textContent = msg;
+  banner.className = 'toast-alert' + (isError ? ' error' : '');
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 2500);
+}
+
+function selectIvTier(t) {
+  selectedIvTier = t;
+  document.querySelectorAll('#iv-tier-pills .sub-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText === 'T' + t);
+  });
+  
+  const encPills = document.querySelectorAll('#iv-enc-pills .sub-pill');
+  const artPills = document.querySelectorAll('#iv-art-pills .sub-pill');
+
+  if (t === 2 || t === 3) {
+    selectedIvEnc = 0;
+    selectedIvArtMult = 0;
+    encPills.forEach(btn => {
+      btn.classList.toggle('disabled', btn.innerText !== '.0');
+      btn.classList.toggle('active', btn.innerText === '.0');
+    });
+    artPills.forEach(btn => {
+      btn.classList.toggle('disabled', !btn.innerText.includes('None'));
+      btn.classList.toggle('active', btn.innerText.includes('None'));
+    });
+  } else {
+    encPills.forEach(btn => {
+      btn.classList.remove('disabled');
+      btn.classList.toggle('active', btn.innerText === '.' + selectedIvEnc);
+    });
+    artPills.forEach(btn => {
+      btn.classList.remove('disabled');
+      btn.classList.toggle('active', (selectedIvArtMult === 0 && btn.innerText.includes('None')) ||
+                                    (selectedIvArtMult === 4 && btn.innerText.includes('Rune')) ||
+                                    (selectedIvArtMult === 12 && btn.innerText.includes('Soul')) ||
+                                    (selectedIvArtMult === 28 && btn.innerText.includes('Relic')) ||
+                                    (selectedIvArtMult === 60 && btn.innerText.includes('Ava')));
+    });
+  }
+}
+
+function selectIvEnc(e) {
+  if (selectedIvTier === 2 || selectedIvTier === 3) return;
+  selectedIvEnc = e;
+  document.querySelectorAll('#iv-enc-pills .sub-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText === '.' + e);
+  });
+}
+
+function selectIvArt(mult, name) {
+  if (selectedIvTier === 2 || selectedIvTier === 3) return;
+  selectedIvArtMult = mult;
+  document.querySelectorAll('#iv-art-pills .sub-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText.includes(name) || (mult === 0 && btn.innerText.includes('None')));
+  });
+}
+
+function toggleShapeshifter() {
+  isShapeshifter = document.getElementById('iv-shapeshifter').checked;
+}
+
+function applyOfficialIV() {
+  const c = window.SAVED_STORE.crafting || {};
+  if (c.cat === "food" || c.cat === "potion") {
+    document.getElementById('cr-iv').value = 0;
+    saveCr();
+    showToast("✓ Food & Potions have 0 Item Value in Albion!");
+    return;
+  }
+
+  const q1 = parseFloat(document.getElementById('cr-r1-q').value) || 0;
+  const q2 = parseFloat(document.getElementById('cr-r2-q').value) || 0;
+  const numItems = q1 + q2;
+  
+  if (numItems === 0) {
+    showToast("⚠️ Enter ingredient quantities (Resource 1/2) first!", true);
+    return;
+  }
+  
+  // Exact Albion Wiki Formula:
+  // Base = 16 * 2^(Tier + Enchant - 4)
+  // Artifact = artifactMultiplier * 2^(Tier - 4)
+  // ItemValue = NumItems * (Base + Artifact) * ShapeShifter
+  const base = 16 * Math.pow(2, (selectedIvTier + selectedIvEnc - 4));
+  const artVal = selectedIvArtMult * Math.pow(2, (selectedIvTier - 4));
+  const shapeshifterScalar = isShapeshifter ? (16 / 11) : 1;
+  
+  const totalIV = Math.round(numItems * (base + artVal) * shapeshifterScalar);
+  
+  document.getElementById('cr-iv').value = totalIV;
+  saveCr();
+  showToast(`✓ Official IV Calculated: ${totalIV}`);
+}
 
 function formatSilver(val) { return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function persistData() { localStorage.setItem('albion_calc_data', JSON.stringify(window.SAVED_STORE)); }
@@ -490,7 +626,7 @@ function renderIndividual() {
     <div class="stat-line total-cost"><span>Gross Capital Req per 999 Stack (Before RRR):</span><span>${formatSilver(res.grossCapitalSpent)} Silver</span></div>
     <div class="stat-line total-cost" style="border-top: none; margin-top: 2px;"><span>Net Capital Req per 999 Stack (After RRR):</span><span>${formatSilver(res.netCapitalSpent)} Silver</span></div>
     <div class="stat-line total"><span>Return on Investment (ROI):</span><span style="color:${roiColor}">${res.roi.toFixed(2)}%</span></div>
-    <div class="stat-line total" style="margin-top: 2px;"><span>Profit per Unit:</span><span class="${pClass}">${pSign}${formatSilver(res.profit)} Silver</span></div>
+    <div class="stat-line total" style="margin-top: 2px;"><span>Profit per Unit:</span><span class="${pClass}">${pSign}${formatSilver(profit)} Silver</span></div>
     <div class="stat-line total" style="margin-top: 2px;"><span>Profit per 999 Stack:</span><span class="${pClass}">${pSign}${formatSilver(res.stackProfit)} Silver</span></div>
   `;
 }
@@ -499,6 +635,14 @@ function setCrCat(cat) {
   window.SAVED_STORE.crafting.cat = cat;
   const container = document.getElementById('cr-cat-select');
   container.querySelectorAll('.res-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(cat)));
+  
+  const ivBox = document.getElementById('iv-calculator-box');
+  if (cat === "food" || cat === "potion") {
+    ivBox.style.opacity = "0.5";
+    document.getElementById('cr-iv').value = 0;
+  } else {
+    ivBox.style.opacity = "1";
+  }
   saveCr();
 }
 
@@ -517,6 +661,10 @@ function loadCr() {
   document.getElementById('cr-je').value = (c.je !== undefined && c.je !== "") ? c.je : "0"; 
   document.getElementById('cr-jf').value = (c.jf !== undefined && c.jf !== "") ? c.jf : "0";
   document.getElementById('cr-jq').value = (c.jq !== undefined && c.jq !== "") ? c.jq : "0"; 
+  
+  if (cat === "food" || cat === "potion") {
+    document.getElementById('iv-calculator-box').style.opacity = "0.5";
+  }
   calcCr();
 }
 
@@ -531,29 +679,6 @@ function saveCr() {
     je: document.getElementById('cr-je').value || "0", jf: document.getElementById('cr-jf').value || "0", jq: document.getElementById('cr-jq').value || "0"
   };
   persistData(); calcCr();
-}
-
-function autoCalcIV() {
-  const tier = parseInt(document.getElementById('cr-auto-tier').value) || 4;
-  const enc = parseInt(document.getElementById('cr-auto-enc').value) || 0;
-  const q1 = parseFloat(document.getElementById('cr-r1-q').value) || 0;
-  const q2 = parseFloat(document.getElementById('cr-r2-q').value) || 0;
-  
-  if (q1 === 0 && q2 === 0) {
-      alert("Please enter ingredient quantities first.");
-      return;
-  }
-  
-  const baseIV = Math.pow(2, (tier + enc));
-  const totalIV = (q1 + q2) * baseIV;
-  
-  document.getElementById('cr-iv').value = totalIV;
-  saveCr();
-  
-  const banner = document.getElementById('toast-banner');
-  banner.textContent = `✓ Auto-calculated IV: ${totalIV}`;
-  banner.style.display = 'block';
-  setTimeout(() => { banner.style.display = 'none'; }, 2000);
 }
 
 function calcCr() {
@@ -607,8 +732,7 @@ function resetAllValues() {
   window.SAVED_STORE.crafting = { cat: "gear", sell: "0", iv: "0", r1q: "0", r1p: "0", r2q: "0", r2p: "0", r3q: "0", r3p: "0", je: "0", jf: "0", jq: "0" };
   window.SAVED_STORE.config = { ...DEFAULT_CONFIG };
   persistData(); loadConfig(); renderPriceInputs(); renderOverview(); renderIndividual(); loadCr();
-  const banner = document.getElementById('toast-banner'); banner.textContent = "✓ All values reset to 0 & defaults restored!";
-  banner.style.display = 'block'; setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  showToast("✓ All values reset to 0 & defaults restored!");
 }
 
 window.onload = function() {
